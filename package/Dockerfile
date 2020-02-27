@@ -23,6 +23,8 @@ COPY sbin/entrypoint.sh /
 
 COPY VERSION /
 
+RUN dnf install tcpdump
+
 RUN  /opt/syslog-ng/sbin/syslog-ng -V
 
 #USER [syslog]
