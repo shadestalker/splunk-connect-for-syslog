@@ -60,3 +60,5 @@ theme:
 plugins:
   - pdf-export:
       combined: true
+  - git-revision-date
+  - mkdocs-versioning
