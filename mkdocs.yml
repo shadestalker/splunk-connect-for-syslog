@@ -58,5 +58,5 @@ theme:
   favicon: "logo.png"
   logo: "logo.png"
 plugins:
-  - mkdocs-versioning
+  #- mkdocs-versioning
   - with-pdf
