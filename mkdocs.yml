@@ -59,4 +59,5 @@ theme:
   logo: "logo.png"
 plugins:
   #- mkdocs-versioning
-  - with-pdf
+  - with-pdf:
+      output_path: _build/html/document.pdf
