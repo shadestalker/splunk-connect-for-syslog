@@ -60,4 +60,6 @@ theme:
 plugins:
   #- mkdocs-versioning
   - with-pdf:
-      output_path: _build/html/document.pdf
+      cover_subtitle: Splunk Connect for Syslog
+      toc_level: 3
+      output_path: ../document.pdf
