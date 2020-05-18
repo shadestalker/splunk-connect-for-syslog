@@ -58,4 +58,5 @@ theme:
   favicon: "logo.png"
   logo: "logo.png"
 plugins:
-  - pdf-export
+  - pdf-export:
+      combined: true
