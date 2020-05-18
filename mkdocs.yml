@@ -58,7 +58,4 @@ theme:
   favicon: "logo.png"
   logo: "logo.png"
 plugins:
-  - pdf-export:
-      combined: true
-  - git-revision-date
   - mkdocs-versioning
