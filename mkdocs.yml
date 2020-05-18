@@ -59,3 +59,4 @@ theme:
   logo: "logo.png"
 plugins:
   - mkdocs-versioning
+  - with-pdf
