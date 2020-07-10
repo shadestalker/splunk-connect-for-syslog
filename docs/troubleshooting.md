@@ -43,7 +43,7 @@ and port as appropriate:
 <podman|docker> run -ti drwetter/testssl.sh --severity MEDIUM --ip 127.0.0.1 selfsigned.example.com:6510
 ```
 
-## Validating HEC/token issues (AKA "No data in Splunk")
+### Can't find data at Splunk!
 
 The first thing to check are the container logs themselves, where stdout from the underlying syslog-ng is written by default.  To do this,
 run:
@@ -81,19 +81,19 @@ SC4S_ENV_CHECK_INDEX: Checking oswin {"text":"Success","code":0}
 SC4S_ENV_CHECK_INDEX: Checking oswinsec {"text":"Success","code":0}`
 ```
 * Look for warnings in the messages tab
-    ```
-    Received event for unconfigured/disabled/deleted index=epav with 
-    source="source::http:sc4s" 
-    host="host::3.12.150.32:8088" 
-    sourcetype="sourcetype::SC4S:PROBE". 
-    So far received events from 1 missing index(es).
-    ```
-This is an indication that the standard `d_hec` destination in syslog-ng (which is the route to Splunk) is being rejected by the HEC endpoint.
+```
+Received event for unconfigured/disabled/deleted index=epav with 
+source="source::http:sc4s" 
+host="host::3.12.150.32:8088" 
+sourcetype="sourcetype::SC4S:PROBE". 
+So far received events from 1 missing index(es).
+```
+Above errors are indication that the standard `d_hec` destination in syslog-ng (which is the route to Splunk) is being rejected by the HEC endpoint.
 The above errors is normally caused by an index that has not been created on the Splunk side, and is a common occurrence in new
 installations.  This can present a serious problem, as just _one_ bad index will "taint" the entire batch (in this case, 1000 events) and
 prevent _any_ of them from being sent to Splunk.  _It is imperative that the container logs be free of these kinds of errors in production._
 
-### Enabling the Alternate Debug Destination
+#### Enabling the Alternate Debug Destination
 
 To help debug why the `400` errors are ocurring, it is helpful to enable an alternate destination for syslog traffic that will write
 the contents of the full JSON payload that is intended to be sent to Splunk via HEC.  This destination will contain each event, repackaged
