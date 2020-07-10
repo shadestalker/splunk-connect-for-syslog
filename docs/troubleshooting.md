@@ -51,14 +51,50 @@ run:
 ```bash
 /usr/bin/podman logs SC4S
 ```
-
-and note the output.  You may see entries similar to these:
 ```
-Mar 16 19:00:06 b817af4e89da syslog-ng[1]: Server returned with a 4XX (client errors) status code, which means we are not authorized or the URL is not found.; url='https://splunk-instance.com:8088/services/collector/event', status_code='400', driver='d_hec#0', location='/opt/syslog-ng/etc/conf.d/destinations/splunk_hec.conf:2:5'
-Mar 16 19:00:06 b817af4e89da syslog-ng[1]: Server disconnected while preparing messages for sending, trying again; driver='d_hec#0', location='/opt/syslog-ng/etc/conf.d/destinations/splunk_hec.conf:2:5', worker_index='4', time_reopen='10', batch_size='1000'
+    ...
+    curl: (3) <url> malformed
+    SC4S_ENV_CHECK_HEC: Invalid Splunk HEC URL, invalid token, or other HEC connectivity issue.
+    Startup will continue to prevent data loss if this is a transient failure.
+    syslog-ng checking config
+    sc4s version=v1.23.0
+    syslog-ng starting
+    affile_sd_curpos(/opt/syslog-ng/var/log/syslog-ng.out)  -->>OK
+    affile_sd_curpos(/opt/syslog-ng/var/log/syslog-ng.err)  -->>OK
 ```
-This is an indication that the standard `d_hec` destination in syslog-ng (which is the route to Splunk) is being rejected by the HEC endpoint.
-A `400` error (not 404) is normally caused by an index that has not been created on the Splunk side, and is a common occurrence in new
+* Are you able to send data to Splunk using HEC token used by SC4S? Copy HEC URL and token from env_file to the following command to check if they work well, Errors are also captured in Podman logs/
+```    
+curl -k  <Splunk-URL>:8088/services/collector/event -H "Authorization: Splunk <TOKEN>“ -d '{"event": “<Message string>“}’.
+```
+ * If changes are made to the mapping by the customer - /opt/sc4s/local/context/splunk_metadata.csv. 
+    * Check podman logs for index connectivity 
+    ```
+    SC4S_ENV_CHECK_HEC: Splunk HEC connection test successful; checking indexes...
+    SC4S_ENV_CHECK_INDEX: Checking email {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking epav {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking main {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netauth {"text":"Incorrect index","code":7}
+    SC4S_ENV_CHECK_INDEX: Checking netdlp {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netdns {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netfw {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netids {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netipam {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netops {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netproxy {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking netwaf {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking osnix {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking oswin {"text":"Success","code":0}
+    SC4S_ENV_CHECK_INDEX: Checking oswinsec {"text":"Success","code":0}`
+    ```
+* Look for warnings in the messages tab
+    ```
+    Received event for unconfigured/disabled/deleted index=epav with 
+    source="source::http:sc4s" 
+    host="host::3.12.150.32:8088" 
+    sourcetype="sourcetype::SC4S:PROBE". 
+    So far received events from 1 missing index(es).
+    ```
+The above errors is normally caused by an index that has not been created on the Splunk side, and is a common occurrence in new
 installations.  This can present a serious problem, as just _one_ bad index will "taint" the entire batch (in this case, 1000 events) and
 prevent _any_ of them from being sent to Splunk.  _It is imperative that the container logs be free of these kinds of errors in production._
 
@@ -66,8 +102,22 @@ prevent _any_ of them from being sent to Splunk.  _It is imperative that the con
 
 To help debug why the `400` errors are ocurring, it is helpful to enable an alternate destination for syslog traffic that will write
 the contents of the full JSON payload that is intended to be sent to Splunk via HEC.  This destination will contain each event, repackaged
-as a `curl` command that can be run directly on the command line to see what the response from the HEC endpoint is.  To do this, set
-`SC4S_DEST_GLOBAL_ALTERNATES=d_hec_debug` in the `env_file` and restart sc4s.  When set, all data destined for Splunk will also be written to
+as a `curl` command that can be run directly on the command line to see what the response from the HEC endpoint is.  
+
+*  Set `SC4S_DEST_GLOBAL_ALTERNATES=d_hec_debug` in the `env_file` 
+* Uncomment environment variable in :/lib/systemd/system/sc4s.service
+    ```
+    # Optional mount point for local disk archive (EWMM output) files
+    Environment="SC4S_LOCAL_ARCHIVE_MOUNT=-v /opt/sc4s/archive:/opt/syslog-ng/var/archive:z"
+    ```
+* restart sc4s 
+    ```
+    sudo systemctl stop sc4s
+    sudo systemctl daemon-reload
+    sudo systemctl enable sc4s
+    sudo systemctl start sc4s 
+    ```
+When set, all data destined for Splunk will also be written to
 `/opt/sc4s/archive/debug`, and will be further categorized in subdirectories by sourcetype.  Here are the things to check:
 
 * In `/opt/sc4s/archive/debug`, you will see directories for each sourcetype that sc4s has collected. If you recognize any that you
@@ -101,7 +151,7 @@ When debugging a configuration syntax issue at startup the container must remain
 If a data source you are trying to ingest via SC4S claims it is RFC-5424 compliant however you are getting a log message processing error this might be happening.
 
 Unfortunately multiple vendors claim RFC-5424 compliance without fully testing that they are. The SC4S error message uses >@< to indicate where the error occurred. Here is an example error message…
-
+```
 { [-]
    ISODATE: 2020-05-04T21:21:59.001+00:00
    MESSAGE: Error processing log message: <14>1 2020-05-04T21:21:58.117351+00:00 arcata-pks-cluster-1 pod.log/cf-workloads/logspinner-testing-6446b8ef - - [kubernetes@47450 cloudfoundry.org/process_type="web" cloudfoundry.org/rootfs-version="v75.0.0" cloudfoundry.org/version="eae53cc3-148d-4395-985c-8fef0606b9e3" controller-revision-hash="logspinner-testing-6446b8ef05-7db777754c" cloudfoundry.org/app_guid="f71634fe-34a4-4f89-adac-3e523f61a401" cloudfoundry.org/source_type="APP" security.istio.io/tlsMode="istio" statefulset.kubernetes.io/pod-n>@<ame="logspinner-testing-6446b8ef05-0" cloudfoundry.org/guid="f71634fe-34a4-4f89-adac-3e523f61a401" namespace_name="cf-workloads" object_name="logspinner-testing-6446b8ef05-0" container_name="opi" vm_id="vm-e34452a3-771e-4994-666e-bfbc7eb77489"] Duration 10.00299412s TotalSent 10 Rate 0.999701 
@@ -109,7 +159,7 @@ Unfortunately multiple vendors claim RFC-5424 compliance without fully testing t
    PRI: <43>
    PROGRAM: syslog-ng
 } 
-
+```
 In this example the error can be found in, statefulset.kubernetes.io/pod-n>@<ame. Looking at the spec for RFC5424, it states that the "SD-NAME" (the left-hand side of the name=value pairs) cannot be longer than 32 printable ASCII characters. In this message, the indicated name exceeds that. Unfortunately, this is a spec violation on the part of the vendor. Ideally the vendor would fix this as a defect so their logs would be RFC-5424 compliant. Alternatively, an exception could be added to the SC4S filter log path for the data source if the vendor can’t/won’t fix the defect. 
 
 In this example, the reason SC4S_SOURCE_STORE_RAWMSG did not return anything is because this error message is coming from syslog-ng itself -- not the filter/log path. When you get messages of the type Error processing log message with the PROGRAM being syslog-ng that is the clue your incoming message is not RFC-5424 compliant (though it's often close, as is the case here).
