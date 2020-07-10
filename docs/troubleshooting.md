@@ -51,8 +51,8 @@ run:
 ```bash
 /usr/bin/podman logs SC4S
 ```
+and note the output.  You may see entries similar to these:
 ```
-    ...
     curl: (3) <url> malformed
     SC4S_ENV_CHECK_HEC: Invalid Splunk HEC URL, invalid token, or other HEC connectivity issue.
     Startup will continue to prevent data loss if this is a transient failure.
@@ -62,30 +62,24 @@ run:
     affile_sd_curpos(/opt/syslog-ng/var/log/syslog-ng.out)  -->>OK
     affile_sd_curpos(/opt/syslog-ng/var/log/syslog-ng.err)  -->>OK
 ```
-* Are you able to send data to Splunk using HEC token used by SC4S? Copy HEC URL and token from env_file to the following command to check if they work well, Errors are also captured in Podman logs/
-```    
-curl -k  <Splunk-URL>:8088/services/collector/event -H "Authorization: Splunk <TOKEN>“ -d '{"event": “<Message string>“}’.
 ```
- * If changes are made to the mapping by the customer - /opt/sc4s/local/context/splunk_metadata.csv. 
-    * Check podman logs for index connectivity 
-    ```
-    SC4S_ENV_CHECK_HEC: Splunk HEC connection test successful; checking indexes...
-    SC4S_ENV_CHECK_INDEX: Checking email {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking epav {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking main {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netauth {"text":"Incorrect index","code":7}
-    SC4S_ENV_CHECK_INDEX: Checking netdlp {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netdns {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netfw {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netids {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netipam {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netops {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netproxy {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking netwaf {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking osnix {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking oswin {"text":"Success","code":0}
-    SC4S_ENV_CHECK_INDEX: Checking oswinsec {"text":"Success","code":0}`
-    ```
+SC4S_ENV_CHECK_HEC: Splunk HEC connection test successful; checking indexes...
+SC4S_ENV_CHECK_INDEX: Checking email {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking epav {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking main {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netauth {"text":"Incorrect index","code":7}
+SC4S_ENV_CHECK_INDEX: Checking netdlp {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netdns {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netfw {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netids {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netipam {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netops {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netproxy {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking netwaf {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking osnix {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking oswin {"text":"Success","code":0}
+SC4S_ENV_CHECK_INDEX: Checking oswinsec {"text":"Success","code":0}`
+```
 * Look for warnings in the messages tab
     ```
     Received event for unconfigured/disabled/deleted index=epav with 
@@ -94,6 +88,7 @@ curl -k  <Splunk-URL>:8088/services/collector/event -H "Authorization: Splunk <T
     sourcetype="sourcetype::SC4S:PROBE". 
     So far received events from 1 missing index(es).
     ```
+This is an indication that the standard `d_hec` destination in syslog-ng (which is the route to Splunk) is being rejected by the HEC endpoint.
 The above errors is normally caused by an index that has not been created on the Splunk side, and is a common occurrence in new
 installations.  This can present a serious problem, as just _one_ bad index will "taint" the entire batch (in this case, 1000 events) and
 prevent _any_ of them from being sent to Splunk.  _It is imperative that the container logs be free of these kinds of errors in production._
