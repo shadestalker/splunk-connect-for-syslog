@@ -159,7 +159,7 @@ In this example the error can be found in, statefulset.kubernetes.io/pod-n>@<ame
 
 In this example, the reason SC4S_SOURCE_STORE_RAWMSG did not return anything is because this error message is coming from syslog-ng itself -- not the filter/log path. When you get messages of the type Error processing log message with the PROGRAM being syslog-ng that is the clue your incoming message is not RFC-5424 compliant (though it's often close, as is the case here).
 
-##Determine which version of SC4S you're running
+## Determine which version of SC4S you're running
 ```sudo podman logs SC4S```
 Moving to the latest release is recommended [Upgrade process](https://splunk-connect-for-syslog.readthedocs.io/en/master/upgrade/).
 
