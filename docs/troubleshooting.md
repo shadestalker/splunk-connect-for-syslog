@@ -158,3 +158,9 @@ Unfortunately multiple vendors claim RFC-5424 compliance without fully testing t
 In this example the error can be found in, statefulset.kubernetes.io/pod-n>@<ame. Looking at the spec for RFC5424, it states that the "SD-NAME" (the left-hand side of the name=value pairs) cannot be longer than 32 printable ASCII characters. In this message, the indicated name exceeds that. Unfortunately, this is a spec violation on the part of the vendor. Ideally the vendor would fix this as a defect so their logs would be RFC-5424 compliant. Alternatively, an exception could be added to the SC4S filter log path for the data source if the vendor can’t/won’t fix the defect. 
 
 In this example, the reason SC4S_SOURCE_STORE_RAWMSG did not return anything is because this error message is coming from syslog-ng itself -- not the filter/log path. When you get messages of the type Error processing log message with the PROGRAM being syslog-ng that is the clue your incoming message is not RFC-5424 compliant (though it's often close, as is the case here).
+
+##Determine which version of SC4S you're running
+```sudo podman logs SC4S```
+Moving to the latest release is recommended [Upgrade process](https://splunk-connect-for-syslog.readthedocs.io/en/master/upgrade/).
+
+
