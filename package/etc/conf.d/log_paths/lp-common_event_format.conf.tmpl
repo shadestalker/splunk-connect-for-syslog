@@ -28,7 +28,7 @@ parser p_cef_ts_end {
 
 parser p_cef_source {
     add-contextual-data(
-        selector("${fields.cef_device_vendor}_${fields.cef_device_product}"),
+        selector("${fields.sc4s_vendor_product}"),
         database("conf.d/context/common_event_format_source.csv")
         ignore-case(yes)
         prefix(".splunk.")
@@ -38,7 +38,7 @@ parser p_cef_source {
 
 parser p_cef_class {
     add-contextual-data(
-        selector("${fields.cef_device_vendor}_${fields.cef_device_product}_${fields.cef_device_event_class}"),
+        selector("${fields.sc4s_vendor_product}_${fields.cef_device_event_class}"),
         database("conf.d/context/common_event_format_class.csv")
         ignore-case(yes)
         prefix(".splunk.")
@@ -70,7 +70,7 @@ log {
 
     if {
         filter {
-            match('Cisco', value("fields.cef_device_vendor")) and match('Email\sSecurity', value("fields.cef_device_product"))
+            match('Cisco', value("fields.cef_device_vendor")) and match('Email Security', value("fields.cef_device_product"))
         };
         rewrite {
             set("Cisco_Email_Security", value("fields.sc4s_vendor_product"));
