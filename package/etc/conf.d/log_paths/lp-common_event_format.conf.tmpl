@@ -68,8 +68,17 @@ log {
 
     parser (p_cef_header);
 
-    rewrite {
-        set("${fields.cef_device_vendor}_${fields.cef_device_product}", value("fields.sc4s_vendor_product"));
+    if {
+        filter {
+            match('Cisco', value("fields.cef_device_vendor")) and match('Email\sSecurity', value("fields.cef_device_product"))
+        };
+        rewrite {
+            set("Cisco_Email_Security", value("fields.sc4s_vendor_product"));
+        };
+    } else{
+        rewrite {
+            set("${fields.cef_device_vendor}_${fields.cef_device_product}", value("fields.sc4s_vendor_product"));
+        };
     };
 
     # We already have the syslog msg time stamp however that may not be the best one
@@ -102,6 +111,8 @@ log {
     if {
         filter {
             match('^Imperva\sInc\._SecureSphere$', value("fields.sc4s_vendor_product"))
+            or match('^Cisco_Email_Security$', value("fields.sc4s_vendor_product"))
+
         };
         rewrite { set("$(template ${.splunk.sc4s_template} $(template t_cef_hdr_msg))" value("MSG")); };
     }

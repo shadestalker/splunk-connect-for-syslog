@@ -16,4 +16,6 @@ Incapsula_SIEMintegration,source,Imperva:Incapsula
 Incapsula_SIEMintegration,index,netwaf
 Imperva Inc._SecureSphere,sourcetype,imperva:waf
 Imperva Inc._SecureSphere,index,netwaf
+Cisco_Email_Security,sourcetype,cisco:esa:cef
+Cisco_Email_Security,index,email
 unknown,source,CEF:unknown
