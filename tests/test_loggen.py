@@ -40,7 +40,8 @@ def test_loggen_bsd(record_property, setup_wordlist, setup_splunk, setup_sc4s):
     dt = datetime.datetime.now()
 
     iso, bsd, time, date, tzoffset, tzname, epoch = time_operations(dt)
-    epoch = epoch[:-3]
+    iso = dt.isoformat()[0:19]
+    epoch = epoch[:-7]
     logger.debug(epoch)
     mt = env.from_string("<38>{{iso}} {{ host }} prg00000[1234]: seq: 0000000008, thread: 0000, runid: 1595610292, stamp: {{iso}} PADDPADDPADDPADDPADDPADDPADDPADDPADDPADDPADD BSD\n")
     message = mt.render(iso=iso, host=host)
